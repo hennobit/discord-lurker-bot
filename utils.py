@@ -23,7 +23,7 @@ def date_string_to_date(time_str: str) -> datetime:
     except ValueError:
         try:
             # if that fails, try to use the format without microseconds
-            logger.bot_logger.error('Failed to parse date string with microseconds. Trying without microseconds.')
+            logger.bot_logger.error('Failed to parse date string with microseconds. Trying without microseconds... time_str: ' + time_str)
             return datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
         except ValueError:
             # if that fails, return None
