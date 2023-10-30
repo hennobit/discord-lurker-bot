@@ -2,7 +2,7 @@ import sqlite3
 import datetime
 from utils import date_string_to_date, get_mic_state
 
-conn = sqlite3.connect('../database/user_info.db')
+conn = sqlite3.connect('user_info.db')
 c = conn.cursor()
 
 # Todo: Die user_info und voice_channel_info sollten nochmal überarbeitet werden.
@@ -130,7 +130,7 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
 
     args = [str(member.status),
             str(member.activity.name if member.activity else ''),
-            str(member.avatar_url),
+            str(member.avatar.url if member.avatar else member.default_avatar),
             ', '.join(role.name for role in member.roles),
             str(member.premium_since),
             str(member.joined_at),
@@ -262,7 +262,7 @@ def update_online_status_time(before=None, after=None, user_id=1, status='', ini
     column_name = get_status_column_name(before.status)
 
     query = '''SELECT last_status_change FROM online_status_time WHERE user_id = ?'''
-    last_status_change = c.execute(query, (before.id,)).fetchone()[0]
+    last_status_change = c.execute(query, (before.id,)).fetchone()
 
     if last_status_change is None:
         last_status_change = now.strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -298,7 +298,7 @@ def update_voice_channel_data(member, before, after, initial_scan=False):
     WHERE user_id = ? AND server_id = ?'''
 
     last_state_change_time_str = c.execute(
-        query, (member.id, member.guild.id)).fetchone()[0]
+        query, (member.id, member.guild.id)).fetchone()
 
     if last_state_change_time_str is not None:
         last_state_change_time = date_string_to_date(
@@ -313,7 +313,7 @@ def update_voice_channel_data(member, before, after, initial_scan=False):
     query = '''SELECT COUNT(*) FROM voice_channel_info
     WHERE user_id = ? AND server_id = ?'''
 
-    count = c.execute(query, (member.id, member.guild.id)).fetchone()[0]
+    count = c.execute(query, (member.id, member.guild.id)).fetchone()
 
     if count == 0:
         query = '''INSERT INTO voice_channel_info
