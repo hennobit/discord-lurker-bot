@@ -2,7 +2,7 @@ import sqlite3
 import datetime
 from utils import date_string_to_date, get_mic_state
 
-conn = sqlite3.connect('user_info.db')
+conn = sqlite3.connect('../database/user_info.db')
 c = conn.cursor()
 
 # Todo: Die user_info und voice_channel_info sollten nochmal überarbeitet werden.
@@ -97,7 +97,7 @@ def insert_user(member):
 
 def update_user_data(member, before, after, update_join_time=True, update_state_change_time=True, initial_scan=False):
     """Hauptfunktion zum Aktualisieren der Benutzerdaten. Diese Funktion wird immer dann aufgerufen,
-    wenn sich der Benutzer in einem Voice-Channel bewegt, den Server betritt oder verlässt.
+    wenn sich der Benutzer in einem Voice-Channel bewegt, den Server betritt oder verlässt or every SCAN_INTERVAL seconds.
     Wenn der User jedoch seinen Mute-Status ändert, wird direkt die Funktion update_mute_data() aufgerufen.
     Parameter:
         member - Member,
@@ -109,12 +109,18 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
     # Since database changes are being made here, it is important that the calls are made in the correct order. This must not be changed.
     update_voice_channel_data(member, before, after, initial_scan=initial_scan)
     update_mute_data(member, before, after)
-    update_online_status_time(user_id=member.id, status=str(
-        member.status), initial_scan=initial_scan)
+    update_online_status_time(user_id=member.id, status=str(member.status), initial_scan=initial_scan)
 
     query = '''
     UPDATE user_info
-    SET status = ?
+    SET status = ?,
+        activity = ?,
+        avatar = ?,
+        roles = ?,
+        premium_since = ?,
+        joined_at = ?,
+        created_at = ?,
+        is_bot = ?
     '''
     if update_join_time:
         query += ', last_join_time = ?'
@@ -122,7 +128,15 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
         query += ', last_state_change_time = ?'
     query += ' WHERE user_id = ? AND server_id = ?'
 
-    args = [str(member.status)]
+    args = [str(member.status),
+            str(member.activity.name if member.activity else ''),
+            str(member.avatar_url),
+            ', '.join(role.name for role in member.roles),
+            str(member.premium_since),
+            str(member.joined_at),
+            str(member.created_at),
+            member.bot]
+
     if update_join_time:
         args.append(datetime.datetime.utcnow())
     if update_state_change_time:
@@ -143,6 +157,7 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
     c.execute(query, tuple(args))
 
     conn.commit()
+
 
 
 def update_mute_data(member, before, after):
