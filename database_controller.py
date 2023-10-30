@@ -2,24 +2,31 @@ import sqlite3
 import datetime
 from utils import date_string_to_date, get_mic_state
 
-conn = sqlite3.connect('../database/user_info.db')
+conn = sqlite3.connect('user_info.db')
 c = conn.cursor()
 
 # Todo: Die user_info und voice_channel_info sollten nochmal überarbeitet werden.
 # Dokumentieren, was die einzelnen Felder bedeuten und welche Werte sie annehmen können. Bin jedes Mal selbst verwirrt.
 c.execute('''CREATE TABLE IF NOT EXISTS user_info (
-             user_id INTEGER,
-             server_id INTEGER,
-             username TEXT,
-             status TEXT,
-             unmuted_time REAL,
-             last_join_time TEXT,
-             total_time_muted REAL,
-             total_time_sound_muted REAL,
-             current_state TEXT,
-             last_state_change_time TEXT,
-             PRIMARY KEY (user_id, server_id)
-             )''')
+    user_id INTEGER,
+    server_id INTEGER,
+    username TEXT,
+    status TEXT,
+    unmuted_time REAL,
+    last_join_time TEXT,
+    total_time_muted REAL,
+    total_time_sound_muted REAL,
+    current_state TEXT,
+    last_state_change_time TEXT,
+    activity TEXT,
+    avatar TEXT,
+    roles TEXT,
+    premium_since TEXT,
+    joined_at TEXT,
+    created_at TEXT,
+    is_bot INTEGER,
+    PRIMARY KEY (user_id, server_id)
+)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS voice_channel_info
              (user_id INTEGER,
@@ -75,16 +82,16 @@ def insert_user(member):
 
     query = '''
     INSERT INTO user_info (user_id, server_id, username, status, unmuted_time, last_join_time,
-                           total_time_muted, total_time_sound_muted, current_state, last_state_change_time)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                           total_time_muted, total_time_sound_muted, current_state, last_state_change_time,
+                           activity, avatar, roles, premium_since, joined_at, created_at, is_bot)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     '''
-    c.execute(query, (member.id, member.guild.id, member.name,
-                      str(member.status), 0, datetime.datetime.utcnow(), 0, 0, get_mic_state(member), datetime.datetime.utcnow()))
-    conn.commit()
+    
+    c.execute(query, (member.id, member.guild.id, member.name, str(member.status), 0, datetime.datetime.utcnow(), 0, 0, '',
+                      datetime.datetime.utcnow(), str(member.activity.name if member.activity else ''), str(member.avatar_url),
+                      str(', '.join(role.name for role in member.roles)), str(member.premium_since),
+                      str(member.joined_at), str(member.created_at), member.bot))
 
-    c.execute('''INSERT INTO online_status_time
-                     (user_id, server_id, online_total, offline_total, idle_total, dnd_total, last_status_change)
-                     VALUES (?, ?, 0, 0, 0, 0, ?)''', (member.id, member.guild.id, None))
     conn.commit()
 
 
@@ -120,7 +127,7 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
         args.append(datetime.datetime.utcnow())
     if update_state_change_time:
         args.append(datetime.datetime.utcnow())
-        
+
     args.append(member.id)
     args.append(member.guild.id)
     c.execute(query, tuple(args))
@@ -214,7 +221,7 @@ def update_online_status_time(before=None, after=None, user_id=1, status='', ini
 
     if before is None and after is None:
         query = '''SELECT last_status_change FROM online_status_time WHERE user_id = ?'''
-        last_status_change = c.execute(query, (user_id,)).fetchone()[0]
+        last_status_change = c.execute(query, (user_id,)).fetchone()
 
         if last_status_change is None:
             # We need to substrac SCAN_SERVER_INTERVAL from the current time, because otherwise the time is wrong at the initial scan.
