@@ -88,7 +88,7 @@ def insert_user(member):
     '''
     
     c.execute(query, (member.id, member.guild.id, member.name, str(member.status), 0, datetime.datetime.utcnow(), 0, 0, '',
-                      datetime.datetime.utcnow(), str(member.activity.name if member.activity else ''), str(member.avatar_url),
+                      datetime.datetime.utcnow(), str(member.activity.name if member.activity else ''), str(member.avatar.url if member.avatar else member.default_avatar),
                       str(', '.join(role.name for role in member.roles)), str(member.premium_since),
                       str(member.joined_at), str(member.created_at), member.bot))
 
