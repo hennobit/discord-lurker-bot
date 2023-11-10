@@ -82,7 +82,6 @@ async def on_member_update(before, after):
     if str(before.status) != str(after.status):
         logger.bot_logger.info(f'{before} changed status from {before.status} to {after.status}')
         update_online_status_time(before=before, after=after)
-        
 
 with open('dc_api_key.txt', 'r') as f:
     api_key = f.read().strip()

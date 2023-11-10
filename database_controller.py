@@ -91,6 +91,11 @@ def insert_user(member):
                       datetime.datetime.utcnow(), str(member.activity.name if member.activity else ''), str(member.avatar.url if member.avatar else member.default_avatar),
                       str(', '.join(role.name for role in member.roles)), str(member.premium_since),
                       str(member.joined_at), str(member.created_at), member.bot))
+    conn.commit()
+    
+    c.execute('''INSERT INTO online_status_time
+                     (user_id, server_id, online_total, offline_total, idle_total, dnd_total, last_status_change)
+                     VALUES (?, ?, 0, 0, 0, 0, ?)''', (member.id, member.guild.id, None))
 
     conn.commit()
 
@@ -145,7 +150,7 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
     args.append(member.id)
     args.append(member.guild.id)
     c.execute(query, tuple(args))
-
+    
     # Voice-Channel-Status aktualisieren
     query = '''
         UPDATE voice_channel_info
@@ -155,7 +160,6 @@ def update_user_data(member, before, after, update_join_time=True, update_state_
     args = [after.name if after else '',
             member.id, member.guild.id]
     c.execute(query, tuple(args))
-
     conn.commit()
 
 
@@ -313,7 +317,7 @@ def update_voice_channel_data(member, before, after, initial_scan=False):
     query = '''SELECT COUNT(*) FROM voice_channel_info
     WHERE user_id = ? AND server_id = ?'''
 
-    count = c.execute(query, (member.id, member.guild.id)).fetchone()
+    count = c.execute(query, (member.id, member.guild.id)).fetchone()[0]
 
     if count == 0:
         query = '''INSERT INTO voice_channel_info

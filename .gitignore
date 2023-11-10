@@ -1,3 +1,4 @@
 __pycache__
 dc_api_key.txt
 *.log
+user_info.db
