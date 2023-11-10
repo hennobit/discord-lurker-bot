@@ -4,9 +4,10 @@ import logger
 from discord.ext import tasks
 
 # create intents allowing the bot to see members and their statuses
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.presences = True
 intents.members = True
+intents.messages = True
 
 client = discord.Client(intents=intents)
 
@@ -82,6 +83,18 @@ async def on_member_update(before, after):
     if str(before.status) != str(after.status):
         logger.bot_logger.info(f'{before} changed status from {before.status} to {after.status}')
         update_online_status_time(before=before, after=after)
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+    
+    if str(message.content) == '!helpDC':
+        response = (
+            "All set! 🕵️‍♂️\n"
+            "Head to https://discord-lurker.com to dive in! 🚀"
+        )
+        await message.channel.send(response)
 
 with open('dc_api_key.txt', 'r') as f:
     api_key = f.read().strip()

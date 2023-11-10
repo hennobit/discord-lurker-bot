@@ -2,7 +2,7 @@ import sqlite3
 import datetime
 from utils import date_string_to_date, get_mic_state
 
-conn = sqlite3.connect('../database/user_info.db')
+conn = sqlite3.connect('user_info.db')
 c = conn.cursor()
 
 # Todo: Die user_info und voice_channel_info sollten nochmal überarbeitet werden.
